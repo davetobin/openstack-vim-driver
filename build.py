@@ -166,8 +166,8 @@ class Builder:
 
     def release(self):
         self.build()
-        if args.skip_docker is not True:
-            self.push_docker_image()
+        # if args.skip_docker is not True:
+        #     self.push_docker_image()
         self.push_release_git_changes()
 
     def init_artifacts_directory(self):
