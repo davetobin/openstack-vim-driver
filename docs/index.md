@@ -23,3 +23,11 @@ Two example Resources have been included to demonstrate creating/deleting infras
 
 - [Helloworld Compute](./reference/example-resources/helloworld-compute/Readme.md) - simple Resource which creates a single compute instance in Openstack (TOSCA and HEAT examples included)
 - [Neutron Network](./reference/example-resources/neutron-network/Readme.md) - a Resource which supports being found with a piece of discovery infrastructure. Use this Resource as an external reference in an Assembly to link to an existing network in Openstack
+
+# Additional Note:
+
+If a VM instance of a stack created through Openstack VIM Driver is locked ( from the OpenStack dashboard, you can lock Compute instances ) and an uninstall of the assembly is attempted, the assembly is deleted, but the stack is not.
+
+The DELETE stack REST api attempts to delete the stack, but it fails when it tries to delete the instance. The stack is left partially deleted in a failed_delete status.
+
+In this case when we add lock on VM instances manually from Openstack dashboard, the orphaned stack has to be removed manually.
