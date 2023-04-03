@@ -349,7 +349,7 @@ class TestResourceDriverHandler(unittest.TestCase):
         self.assertIsInstance(result, LifecycleExecuteResponse)
         self.assert_request_id(result.request_id, 'Delete', '1')
         self.mock_location_translator.from_deployment_location.assert_called_once_with(self.deployment_location)
-        self.mock_heat_driver.delete_stack.assert_called_once_with('1')
+        self.mock_heat_driver.delete_stack.assert_called_once_with('1',result.request_id)
 
     def test_delete_infrastructure_stack_not_found(self):
         driver = ResourceDriverHandler(self.mock_location_translator, resource_driver_config=self.resource_driver_config, heat_translator_service=self.mock_heat_translator, tosca_discovery_service=self.mock_tosca_discover_service)
@@ -382,7 +382,7 @@ class TestResourceDriverHandler(unittest.TestCase):
         driver = ResourceDriverHandler(self.mock_location_translator, resource_driver_config=self.resource_driver_config, heat_translator_service=self.mock_heat_translator, tosca_discovery_service=self.mock_tosca_discover_service)
         execution = driver.get_lifecycle_execution('Create::1::request123', self.deployment_location)
         self.mock_location_translator.from_deployment_location.assert_called_once_with(self.deployment_location)
-        self.mock_heat_driver.get_stack.assert_called_once_with('1')
+        self.mock_heat_driver.get_stack.assert_called_once_with('1',execution.request_id)
 
     def test_get_lifecycle_execution_create_in_progress(self):
         self.mock_heat_driver.get_stack.return_value = {
