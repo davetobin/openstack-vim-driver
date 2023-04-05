@@ -1,9 +1,12 @@
 import logging
+import uuid
 from neutronclient.v2_0 import client as neutronclient
 from neutronclient.common import exceptions as neutronexceptions
+from ignition.service.logging import logging_context
 
 logger = logging.getLogger(__name__)
 
+LOG_URI_PREFIX = '...'
 
 class NeutronDriver():
 
@@ -19,14 +22,29 @@ class NeutronDriver():
             raise ValueError('network_id must be provided')
         neutron_client = self.__get_neutron_client()
         logger.debug('Retrieving network with id %s', network_id)
-        result = neutron_client.show_network(network_id)
-        return result['network']
+        try:
+            external_request_id = str(uuid.uuid4())
+
+            self._generate_additional_logs(network_id, 'sent', external_request_id, 'application/json',
+                                       'request', 'http', {'method' : 'get', 'uri' : LOG_URI_PREFIX +'/stacks'}, None)
+            result = neutron_client.show_network(network_id)
+            self._generate_additional_logs(result, 'received', external_request_id, 'application/json',
+                                       'response', 'http', {'status_code' : 200, 'status_reason_phrase' : 'ok'}, None)  
+            return result['network']
+        except (neutronexceptions.BadRequest, neutronexceptions.NotFound)  as e:
+            self._generate_additional_logs(e, 'received', external_request_id, 'plain/text',
+                                       'response', 'http', {'status_code' : e.code,'status_reason_phrase' : e.message }, None)
+            raise e
+
 
     def get_network_by_name(self, network_name):
         if network_name is None:
             raise ValueError('network_name must be provided')
         neutron_client = self.__get_neutron_client()
         logger.debug('Retrieving network with name %s', network_name)
+        external_request_id = str(uuid.uuid4())
+        self._generate_additional_logs(network_name, 'sent', external_request_id, 'application/json',
+                                       'request', 'http', {'method' : 'get', 'uri' : LOG_URI_PREFIX +'/stacks'}, None)
         result = neutron_client.list_networks()
         matches = []
         for network in result['networks']:
@@ -36,6 +54,8 @@ class NeutronDriver():
             raise neutronexceptions.NeutronClientNoUniqueMatch(resource='Network',
                                                                name=network_name)
         elif len(matches) == 1:
+            self._generate_additional_logs(result, 'received', external_request_id, 'application/json',
+                                       'response', 'http', {'status_code' : 200, 'status_reason_phrase' : 'ok'}, None)
             return matches[0]
         else:
             raise neutronexceptions.NotFound(message='Unable to find network with name \'{0}\''.format(network_name))
@@ -45,5 +65,53 @@ class NeutronDriver():
             raise ValueError('subnet_id must be provided')
         neutron_client = self.__get_neutron_client()
         logger.debug('Retrieving subnet with id %s', subnet_id)
-        result = neutron_client.show_subnet(subnet_id)
-        return result['subnet']
+        try:
+            external_request_id = str(uuid.uuid4())
+
+            self._generate_additional_logs(subnet_id, 'sent', external_request_id, 'application/json',
+                                       'request', 'http', {'method' : 'get', 'uri' : LOG_URI_PREFIX +'/stacks'}, None)
+            result = neutron_client.show_subnet(subnet_id)
+            self._generate_additional_logs(result, 'received', external_request_id, 'application/json',
+                                       'response', 'http', {'status_code' : 200, 'status_reason_phrase' : 'ok'}, None)
+            return result['subnet']
+        except (neutronexceptions.BadRequest, neutronexceptions.NotFound)  as e:
+            self._generate_additional_logs(e, 'received', external_request_id, 'plain/text',
+                                       'response', 'http', {'status_code' : e.code,'status_reason_phrase' : e.message }, None)
+            raise e
+    
+    def _generate_additional_logs(self, message_data, message_direction, external_request_id, content_type,
+                                  message_type, protocol, protocol_metadata, driver_request_id):
+        try:   
+            logging_context_dict = {'message_direction' : message_direction, 'tracectx.externalrequestid' : external_request_id, 'content_type' : content_type,
+                                    'message_type' : message_type, 'protocol' : protocol, 'protocol_metadata' : str(protocol_metadata).replace("'", '\"'),'tracectx.driverrequestid' : driver_request_id }
+            if driver_request_id is None:
+                logging_context_dict.pop('tracectx.driverrequestid')
+            if message_direction is None:
+                logging_context_dict.pop('message_direction')
+            if external_request_id is None:
+                logging_context_dict.pop('tracectx.externalrequestid')
+            if content_type is None:
+                logging_context_dict.pop('content_type') 
+            if message_type is None:
+                logging_context_dict.pop('message_type')
+            if protocol is None:
+                logging_context_dict.pop('protocol')                  
+            if protocol_metadata is None:
+                logging_context_dict.pop('protocol_metadata')  
+            logging_context.set_from_dict(logging_context_dict)
+            logger.info(str(message_data).replace("'",'\"'))
+        finally:
+            if('message_direction' in logging_context.data):
+                logging_context.data.pop("message_direction")
+            if('tracectx.externalrequestid' in logging_context.data):
+                logging_context.data.pop("tracectx.externalrequestid")
+            if('content_type' in logging_context.data):
+                logging_context.data.pop("content_type")
+            if('message_type' in logging_context.data):
+                logging_context.data.pop("message_type")
+            if('protocol' in logging_context.data):
+                logging_context.data.pop("protocol")
+            if('protocol_metadata' in logging_context.data):
+                logging_context.data.pop("protocol_metadata")
+            if('tracectx.driverrequestid' in logging_context.data):
+                logging_context.data.pop("tracectx.driverrequestid")
