@@ -24,16 +24,16 @@ class NeutronDriver():
         logger.debug('Retrieving network with id %s', network_id)
         try:
             external_request_id = str(uuid.uuid4())
-
-            self._generate_additional_logs(network_id, 'sent', external_request_id, 'application/json',
-                                       'request', 'http', {'method' : 'get', 'uri' : LOG_URI_PREFIX +'/stacks'}, None)
+            driver_request_id  = str(uuid.uuid4())
+            self._generate_additional_logs('', 'sent', external_request_id, '',
+                                       'request', 'http', {'method' : 'get', 'uri' : LOG_URI_PREFIX +'/networks/' + network_id }, driver_request_id)
             result = neutron_client.show_network(network_id)
-            self._generate_additional_logs(result, 'received', external_request_id, 'application/json',
-                                       'response', 'http', {'status_code' : 200, 'status_reason_phrase' : 'ok'}, None)  
+            self._generate_additional_logs(result, 'received', external_request_id, 'plain/text',
+                                       'response', 'http', {'status_code' : 200, 'status_reason_phrase' : 'ok'}, driver_request_id)  
             return result['network']
-        except (neutronexceptions.BadRequest, neutronexceptions.NotFound)  as e:
+        except Exception as e:
             self._generate_additional_logs(e, 'received', external_request_id, 'plain/text',
-                                       'response', 'http', {'status_code' : e.code,'status_reason_phrase' : e.message }, None)
+                                       'response', 'http', {'status_code' : e.status_code,'status_reason_phrase' : e.message }, driver_request_id)
             raise e
 
 
@@ -43,9 +43,17 @@ class NeutronDriver():
         neutron_client = self.__get_neutron_client()
         logger.debug('Retrieving network with name %s', network_name)
         external_request_id = str(uuid.uuid4())
-        self._generate_additional_logs(network_name, 'sent', external_request_id, 'application/json',
-                                       'request', 'http', {'method' : 'get', 'uri' : LOG_URI_PREFIX +'/stacks'}, None)
-        result = neutron_client.list_networks()
+        driver_request_id  = str(uuid.uuid4())
+        self._generate_additional_logs('', 'sent', external_request_id, '',
+                                       'request', 'http', {'method' : 'get', 'uri' : LOG_URI_PREFIX +'/networks' }, driver_request_id)
+        try:
+            result = neutron_client.list_networks()
+            self._generate_additional_logs(str(result), 'received', external_request_id, 'plain/text',
+                                       'response', 'http', {'status_code' : 200, 'status_reason_phrase' : 'ok'}, driver_request_id)
+        except Exception as e:
+            self._generate_additional_logs(e, 'received', external_request_id, 'plain/text',
+                                       'response', 'http', {'status_code' : e.status_code,'status_reason_phrase' : e.message }, driver_request_id)
+            raise e    
         matches = []
         for network in result['networks']:
             if network['name'] == network_name:
@@ -53,9 +61,7 @@ class NeutronDriver():
         if len(matches) > 1:
             raise neutronexceptions.NeutronClientNoUniqueMatch(resource='Network',
                                                                name=network_name)
-        elif len(matches) == 1:
-            self._generate_additional_logs(result, 'received', external_request_id, 'application/json',
-                                       'response', 'http', {'status_code' : 200, 'status_reason_phrase' : 'ok'}, None)
+        elif len(matches) == 1:  
             return matches[0]
         else:
             raise neutronexceptions.NotFound(message='Unable to find network with name \'{0}\''.format(network_name))
@@ -67,16 +73,16 @@ class NeutronDriver():
         logger.debug('Retrieving subnet with id %s', subnet_id)
         try:
             external_request_id = str(uuid.uuid4())
-
-            self._generate_additional_logs(subnet_id, 'sent', external_request_id, 'application/json',
-                                       'request', 'http', {'method' : 'get', 'uri' : LOG_URI_PREFIX +'/stacks'}, None)
+            driver_request_id  = str(uuid.uuid4())
+            self._generate_additional_logs('', 'sent', external_request_id, '',
+                                       'request', 'http', {'method' : 'get', 'uri' : LOG_URI_PREFIX +'/subnets/' + subnet_id}, driver_request_id)
             result = neutron_client.show_subnet(subnet_id)
-            self._generate_additional_logs(result, 'received', external_request_id, 'application/json',
-                                       'response', 'http', {'status_code' : 200, 'status_reason_phrase' : 'ok'}, None)
+            self._generate_additional_logs(result, 'received', external_request_id, 'plain/text',
+                                       'response', 'http', {'status_code' : 200, 'status_reason_phrase' : 'ok'}, driver_request_id)
             return result['subnet']
-        except (neutronexceptions.BadRequest, neutronexceptions.NotFound)  as e:
+        except Exception as e:
             self._generate_additional_logs(e, 'received', external_request_id, 'plain/text',
-                                       'response', 'http', {'status_code' : e.code,'status_reason_phrase' : e.message }, None)
+                                       'response', 'http', {'status_code' : e.status_code,'status_reason_phrase' : e.message }, driver_request_id)
             raise e
     
     def _generate_additional_logs(self, message_data, message_direction, external_request_id, content_type,
