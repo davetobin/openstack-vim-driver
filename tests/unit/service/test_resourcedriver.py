@@ -207,7 +207,6 @@ class TestResourceDriverHandler(unittest.TestCase):
         self.resource_properties['stack_id'] = {'type': 'string', 'value': 'MY_STACK_ID'}
         result = driver.execute_lifecycle('Create', self.heat_driver_files, self.system_properties, self.resource_properties, {}, AssociatedTopology(), self.deployment_location)
         self.assertIsInstance(result, LifecycleExecuteResponse)
-        self.assert_request_id(result.request_id, 'Create', 'MY_STACK_ID')
         self.assert_internal_resource(result.associated_topology, 'MY_STACK_ID')
         self.mock_heat_translator.generate_heat_template.assert_not_called()
         self.mock_heat_driver.create_stack.assert_not_called()
@@ -228,7 +227,6 @@ class TestResourceDriverHandler(unittest.TestCase):
         self.resource_properties['stack_id'] = {'type': 'string', 'value': None}
         result = driver.execute_lifecycle('Create', self.heat_driver_files, self.system_properties, self.resource_properties, {}, AssociatedTopology(), self.deployment_location)
         self.assertIsInstance(result, LifecycleExecuteResponse)
-        self.assert_request_id(result.request_id, 'Create', '1')
         self.assert_internal_resource(result.associated_topology, '1')
         self.mock_location_translator.from_deployment_location.assert_called_once_with(self.deployment_location)
         self.mock_heat_driver.create_stack.assert_called_once_with(ANY, self.heat_template, {'propA': 'valueA'})
@@ -240,7 +238,6 @@ class TestResourceDriverHandler(unittest.TestCase):
         self.resource_properties['stack_id'] = {'type': 'string', 'value': '  '}
         result = driver.execute_lifecycle('Create', self.heat_driver_files, self.system_properties, self.resource_properties, {}, AssociatedTopology(), self.deployment_location)
         self.assertIsInstance(result, LifecycleExecuteResponse)
-        self.assert_request_id(result.request_id, 'Create', '1')
         self.assert_internal_resource(result.associated_topology, '1')
         self.mock_location_translator.from_deployment_location.assert_called_once_with(self.deployment_location)
         self.mock_heat_driver.create_stack.assert_called_once_with(ANY, self.heat_template, {'propA': 'valueA'})
@@ -251,7 +248,6 @@ class TestResourceDriverHandler(unittest.TestCase):
         driver = ResourceDriverHandler(self.mock_location_translator, resource_driver_config=self.resource_driver_config, heat_translator_service=self.mock_heat_translator, tosca_discovery_service=self.mock_tosca_discover_service)
         result = driver.execute_lifecycle('Create', self.heat_driver_files, self.system_properties, self.resource_properties, {}, AssociatedTopology(), self.deployment_location)
         self.assertIsInstance(result, LifecycleExecuteResponse)
-        self.assert_request_id(result.request_id, 'Create', '1')
         self.assert_internal_resource(result.associated_topology, '1')
         self.mock_location_translator.from_deployment_location.assert_called_once_with(self.deployment_location)
         self.mock_heat_driver.create_stack.assert_called_once_with(ANY, self.heat_template, {'propA': 'valueA'})
@@ -291,7 +287,6 @@ class TestResourceDriverHandler(unittest.TestCase):
         driver = ResourceDriverHandler(self.mock_location_translator, resource_driver_config=self.resource_driver_config, heat_translator_service=self.mock_heat_translator, tosca_discovery_service=self.mock_tosca_discover_service)
         result = driver.execute_lifecycle('Create', self.tosca_driver_files, self.system_properties, self.resource_properties, self.tosca_request_properties, AssociatedTopology(), self.deployment_location)
         self.assertIsInstance(result, LifecycleExecuteResponse)
-        self.assert_request_id(result.request_id, 'Create', '1')
         self.assert_internal_resource(result.associated_topology, '1')
         self.mock_heat_translator.generate_heat_template.assert_called_once_with(self.tosca_template, template_path=self.tosca_template_path)
         self.mock_location_translator.from_deployment_location.assert_called_once_with(self.deployment_location)

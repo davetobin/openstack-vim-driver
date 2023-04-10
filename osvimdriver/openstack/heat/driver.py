@@ -3,6 +3,7 @@ import uuid
 from heatclient import client as heatclient
 from heatclient import exc as heatexc
 from ignition.service.logging import logging_context
+import osvimdriver.service.common as common
 
 import osvimdriver.service.resourcedriver as rd
 
@@ -23,7 +24,7 @@ class HeatDriver():
     def __get_heat_client(self):
         return self.__heat_client
 
-    def create_stack(self, stack_name, heat_template, input_properties=None,  files=None,driver_request_id=None ):
+    def create_stack(self, stack_name, heat_template, input_properties=None,  files=None ):
         if input_properties is None:
             input_properties = {}
         if files is None:
@@ -38,13 +39,13 @@ class HeatDriver():
         external_request_id = str(uuid.uuid4())
 
         reqbody_dict = {"stack_name" : stack_name, "template" : heat_template, "parameters" : input_properties, "files" : files}
-        self._generate_additional_logs(reqbody_dict, 'sent', external_request_id, 'application/json',
-                                       'request', 'http', {'method' : 'post', 'uri' : LOG_URI_PREFIX +'/stacks'}, driver_request_id)
+        common._generate_additional_logs(reqbody_dict, 'sent', external_request_id, 'application/json',
+                                       'request', 'http', {'method' : 'post', 'uri' : LOG_URI_PREFIX +'/stacks'}, None)
         try:
             create_result = heat_client.stacks.create(stack_name=stack_name, template=heat_template, parameters=input_properties, files=files)
             stack_id = create_result['stack']['id']
             driver_request_id = rd.build_request_id(rd.CREATE_REQUEST_PREFIX, str(stack_id))
-            self._generate_additional_logs(create_result, 'received', external_request_id, 'application/json',
+            common._generate_additional_logs(create_result, 'received', external_request_id, 'application/json',
                                        'response', 'http', {'status_code' : 201,'status_reason_phrase' : 'Created'}, driver_request_id)
             logger.debug('Stack with name %s created and assigned id %s', stack_name, stack_id)
             return stack_id
@@ -52,7 +53,7 @@ class HeatDriver():
             status_reason_phrase = 'Not Found'
             if  e.code != 404:
                 status_reason_phrase = 'Bad Request'
-            self._generate_additional_logs(e, 'received', external_request_id, 'plain/text',
+            common._generate_additional_logs(e, 'received', external_request_id, 'plain/text',
                                        'response', 'http', {'status_code' : e.code,'status_reason_phrase' : status_reason_phrase}, driver_request_id)
             raise e
 
@@ -64,19 +65,19 @@ class HeatDriver():
         try:
             external_request_id = str(uuid.uuid4())
            
-            self._generate_additional_logs('', 'sent', external_request_id, '',
+            common._generate_additional_logs('', 'sent', external_request_id, '',
                                         'request', 'http', {'method':'delete', 'uri' : LOG_URI_PREFIX + '/stacks/' + stack_id}, driver_request_id)
             delete_result = heat_client.stacks.delete(stack_id)
             result = ''
             if delete_result != None:   
                 result = delete_result
-            self._generate_additional_logs(result, 'received', external_request_id, '',
+            common._generate_additional_logs(result, 'received', external_request_id, '',
                                        'response', 'http', {'status_code' : 204,'status_reason_phrase' : 'No Content'}, driver_request_id)
         except (heatexc.HTTPNotFound,heatexc.HTTPBadRequest) as e:
             status_reason_phrase = 'Not Found'
             if  e.code != 404:
                 status_reason_phrase = 'Bad Request'
-            self._generate_additional_logs(e, 'received', external_request_id, 'plain/text',
+            common._generate_additional_logs(e, 'received', external_request_id, 'plain/text',
                                        'response', 'http', {'status_code' : e.code,'status_reason_phrase' : status_reason_phrase}, driver_request_id)
             raise StackNotFoundError(str(e)) from e
 
@@ -87,17 +88,17 @@ class HeatDriver():
         logger.debug('Retrieving stack with id %s', stack_id)
         try:
             external_request_id = str(uuid.uuid4())
-            self._generate_additional_logs('', 'sent', external_request_id, '',
+            common._generate_additional_logs('', 'sent', external_request_id, '',
                                         'request', 'http', {'method':'get', 'uri' : LOG_URI_PREFIX + '/stacks/' + stack_id}, driver_request_id)
             result = heat_client.stacks.get(stack_id)
            
-            self._generate_additional_logs(str(result).removeprefix('<Stack').removesuffix('>'), 'received', external_request_id, 'application/json',
+            common._generate_additional_logs(str(result).removeprefix('<Stack').removesuffix('>'), 'received', external_request_id, 'application/json',
                                        'response', 'http', {'status_code' : 200, 'status_reason_phrase' : 'ok'}, driver_request_id)  
         except (heatexc.HTTPNotFound, heatexc.HTTPBadRequest)  as e:
             status_reason_phrase = 'Not Found'
             if  e.code != 404:
                 status_reason_phrase = 'Bad Request'
-            self._generate_additional_logs(e, 'received', external_request_id, 'plain/text',
+            common._generate_additional_logs(e, 'received', external_request_id, 'plain/text',
                                        'response', 'http', {'status_code' : e.code,'status_reason_phrase' : status_reason_phrase}, driver_request_id)
             raise StackNotFoundError(str(e)) from e
         return result.to_dict()
@@ -118,39 +119,4 @@ class HeatDriver():
         result = heat_client.stacks.list()
         return result
 
-    def _generate_additional_logs(self, message_data, message_direction, external_request_id, content_type,
-                                  message_type, protocol, protocol_metadata, driver_request_id):
-        try:   
-            logging_context_dict = {'message_direction' : message_direction, 'tracectx.externalrequestid' : external_request_id, 'content_type' : content_type,
-                                    'message_type' : message_type, 'protocol' : protocol, 'protocol_metadata' : str(protocol_metadata).replace("'", '\"'),'tracectx.driverrequestid' : driver_request_id }
-            if driver_request_id is None:
-                logging_context_dict.pop('tracectx.driverrequestid')
-            if message_direction is None:
-                logging_context_dict.pop('message_direction')
-            if external_request_id is None:
-                logging_context_dict.pop('tracectx.externalrequestid')
-            if content_type is None:
-                logging_context_dict.pop('content_type') 
-            if message_type is None:
-                logging_context_dict.pop('message_type')
-            if protocol is None:
-                logging_context_dict.pop('protocol')                  
-            if protocol_metadata is None:
-                logging_context_dict.pop('protocol_metadata')  
-            logging_context.set_from_dict(logging_context_dict)
-            logger.info(str(message_data).replace("'",'\"'))
-        finally:
-            if('message_direction' in logging_context.data):
-                logging_context.data.pop("message_direction")
-            if('tracectx.externalrequestid' in logging_context.data):
-                logging_context.data.pop("tracectx.externalrequestid")
-            if('content_type' in logging_context.data):
-                logging_context.data.pop("content_type")
-            if('message_type' in logging_context.data):
-                logging_context.data.pop("message_type")
-            if('protocol' in logging_context.data):
-                logging_context.data.pop("protocol")
-            if('protocol_metadata' in logging_context.data):
-                logging_context.data.pop("protocol_metadata")
-            if('tracectx.driverrequestid' in logging_context.data):
-                logging_context.data.pop("tracectx.driverrequestid")
+   
