@@ -24,7 +24,7 @@ class HeatDriver():
     def __get_heat_client(self):
         return self.__heat_client
 
-    def create_stack(self, stack_name, heat_template, input_properties=None,  files=None ):
+    def create_stack(self, stack_name, heat_template, input_properties=None,  files=None):
         if input_properties is None:
             input_properties = {}
         if files is None:
@@ -41,15 +41,19 @@ class HeatDriver():
         reqbody_dict = {"stack_name" : stack_name, "template" : heat_template, "parameters" : input_properties, "files" : files}
         common._generate_additional_logs(reqbody_dict, 'sent', external_request_id, 'application/json',
                                        'request', 'http', {'method' : 'post', 'uri' : LOG_URI_PREFIX +'/stacks'}, None)
-        try:
+        
+        
+        try:  
             create_result = heat_client.stacks.create(stack_name=stack_name, template=heat_template, parameters=input_properties, files=files)
             stack_id = create_result['stack']['id']
             driver_request_id = rd.build_request_id(rd.CREATE_REQUEST_PREFIX, str(stack_id))
             common._generate_additional_logs(create_result, 'received', external_request_id, 'application/json',
                                        'response', 'http', {'status_code' : 201,'status_reason_phrase' : 'Created'}, driver_request_id)
             logger.debug('Stack with name %s created and assigned id %s', stack_name, stack_id)
-            return stack_id
+            return stack_id,driver_request_id
         except (heatexc.HTTPNotFound,heatexc.HTTPBadRequest) as e:
+            stack_id = str(uuid.uuid4())
+            driver_request_id = rd.build_request_id(rd.CREATE_REQUEST_PREFIX, str(stack_id))
             status_reason_phrase = 'Not Found'
             if  e.code != 404:
                 status_reason_phrase = 'Bad Request'

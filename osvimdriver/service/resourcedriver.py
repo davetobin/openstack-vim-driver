@@ -1,4 +1,4 @@
-import uuid
+from uuid import uuid4
 import logging
 import re
 import os
@@ -46,7 +46,7 @@ def build_request_id(request_type, stack_id):
         request_id += REQUEST_ID_SEPARATOR
         request_id += stack_id
         request_id += REQUEST_ID_SEPARATOR
-        request_id += str(uuid.uuid4())
+        request_id += str(uuid4())
         return request_id
 
 class AdditionalResourceDriverProperties(ConfigurationPropertiesGroup, Service, Capability):
@@ -130,6 +130,7 @@ class ResourceDriverHandler(Service, ResourceDriverHandlerCapability):
     def __handle_create(self, driver_files, system_properties, resource_properties, request_properties, associated_topology, openstack_location):
         heat_driver = openstack_location.heat_driver
         stack_id = None
+        request_id =None
         if 'stack_id' in resource_properties:
             input_stack_id = resource_properties.get('stack_id')
             if input_stack_id != None and len(input_stack_id.strip())!=0 and input_stack_id.strip() != "0":
@@ -170,9 +171,8 @@ class ResourceDriverHandler(Service, ResourceDriverHandlerCapability):
             if 'resourceId' in system_properties and 'resourceName' in system_properties:
                 stack_name = self.stack_name_creator.create(system_properties['resourceId'], system_properties['resourceName'])
             else:
-                stack_name = 's' + str(uuid.uuid4())       
-            stack_id = heat_driver.create_stack(stack_name, heat_template, heat_inputs, **kwargs)
-        request_id = build_request_id(CREATE_REQUEST_PREFIX, stack_id)
+                stack_name = 's' + str(uuid4())       
+            stack_id,request_id = heat_driver.create_stack(stack_name, heat_template, heat_inputs, **kwargs)
         associated_topology = self.__build_associated_topology_response(stack_id)
         return LifecycleExecuteResponse(request_id, associated_topology=associated_topology)
 
