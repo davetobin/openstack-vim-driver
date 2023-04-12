@@ -1,3 +1,5 @@
+
+from uuid import uuid4
 from toscaparser.functions import GetInput, GetAttribute, GetProperty, Function
 from neutronclient.common import exceptions as neutronexceptions
 
@@ -90,10 +92,11 @@ class NetworkSearchImpl:
         else:
             target_search_value = target_property_value
         try:
+            driver_request_id  = str(uuid4())
             if single_property_key == NetworkTranslator.TOSCA.PROPS.ID:
-                network = neutron_driver.get_network_by_id(target_search_value)
+                network = neutron_driver.get_network_by_id(target_search_value,driver_request_id)         
             else:
-                network = neutron_driver.get_network_by_name(target_search_value)
+                network = neutron_driver.get_network_by_name(target_search_value,driver_request_id)   
             return network
         except neutronexceptions.NotFound as e:
             raise NotDiscoveredError('Cannot find {0} with search value: {1}'.format(network_node_template.type_definition.type, target_search_value)) from e
@@ -229,7 +232,8 @@ class NetworkTranslator:
         # We currently support retrieval of values from first subnet only
         first_subnet_id = subnets[0]
         neutron_driver = self.openstack_location.neutron_driver
-        first_subnet = neutron_driver.get_subnet_by_id(first_subnet_id)
+        driver_request_id  = str(uuid4())
+        first_subnet = neutron_driver.get_subnet_by_id(first_subnet_id,driver_request_id)
         return NetworkSubnetTranslator().resolve_network_tosca_attribute(first_subnet, tosca_attribute_name)
 
 

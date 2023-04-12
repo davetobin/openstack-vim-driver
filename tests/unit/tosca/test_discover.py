@@ -1,3 +1,4 @@
+import uuid
 from toscaparser.tosca_template import ToscaTemplate
 import unittest
 import os
@@ -121,27 +122,33 @@ class TestNetworkSearchImpl(unittest.TestCase):
             search_impl.discover(tosca_template)
         self.assertEqual(str(context.exception), 'Cannot discover nodes of type: tosca.nodes.Custom')
 
-    def test_discover_network(self):
+    @patch('osvimdriver.tosca.discover.uuid4')
+    def test_discover_network(self,mock_uuid4):
+        mock_uuid4.return_value = 'request1234'
         self.__configure_mock_neutron_driver_with_network('TestNetwork')
         tosca_template = self.__get_template(discover_network_tosca_file)
         search_impl = NetworkSearchImpl(self.mock_openstack_location)
         search_result = search_impl.discover(tosca_template)
-        self.mock_neutron_driver.get_network_by_name.assert_called_once_with('TestNetwork')
+        self.mock_neutron_driver.get_network_by_name.assert_called_once_with('TestNetwork','request1234')
         self.assertIsInstance(search_result, DiscoveryResult)
         self.assertEqual(search_result.discover_id, 'TestNetwork')
         self.assertEqual(search_result.outputs, {})
 
-    def test_discover_network_by_id(self):
-        self.__configure_mock_neutron_driver_with_network_on_id('1234', 'TestNetwork')
+    @patch('osvimdriver.tosca.discover.uuid4')
+    def test_discover_network_by_id(self,mock_uuid4):
+        mock_uuid4.return_value = 'request1234'
+        self.__configure_mock_neutron_driver_with_network_on_id('1234','TestNetwork')
         tosca_template = self.__get_template(discover_network_with_id_file)
         search_impl = NetworkSearchImpl(self.mock_openstack_location)
         search_result = search_impl.discover(tosca_template)
-        self.mock_neutron_driver.get_network_by_id.assert_called_once_with('1234')
+        self.mock_neutron_driver.get_network_by_id.assert_called_once_with('1234','request1234')
         self.assertIsInstance(search_result, DiscoveryResult)
         self.assertEqual(search_result.discover_id, '1234')
         self.assertEqual(search_result.outputs, {})
 
-    def test_discover_network_with_input_property(self):
+    @patch('osvimdriver.tosca.discover.uuid4')
+    def test_discover_network_with_input_property(self,mock_uuid4):
+        mock_uuid4.return_value = 'request1234'
         self.__configure_mock_neutron_driver_with_network('NetworkA')
         tosca_template = self.__get_template(discover_network_with_inputs_tosca_file, {'network_name': 'NetworkA'})
         search_impl = NetworkSearchImpl(self.mock_openstack_location)
@@ -149,7 +156,7 @@ class TestNetworkSearchImpl(unittest.TestCase):
         self.assertIsInstance(search_result, DiscoveryResult)
         self.assertEqual(search_result.discover_id, 'NetworkA')
         self.assertEqual(search_result.outputs, {})
-        self.mock_neutron_driver.get_network_by_name.assert_called_once_with('NetworkA')
+        self.mock_neutron_driver.get_network_by_name.assert_called_once_with('NetworkA','request1234')
 
     def test_discover_network_with_unsupported_property_function_fails(self):
         tosca_template = self.__get_template(discover_network_with_unsupported_property_function_file)
@@ -172,23 +179,27 @@ class TestNetworkSearchImpl(unittest.TestCase):
             search_impl.discover(tosca_template)
         self.assertEqual(str(context.exception),
                          'tosca.nodes.network.Network nodes can only be found with a single \'network_name\' or \'network_id\' property but multiple properties were found on the node template: [\'network_name\', \'ip_version\']')
-
-    def test_discover_network_with_outputs(self):
+    
+    @patch('osvimdriver.tosca.discover.uuid4')
+    def test_discover_network_with_outputs(self,mock_uuid4):
+        mock_uuid4.return_value = 'request1234'
         self.__configure_mock_neutron_driver_with_network('TestNetwork')
         tosca_template = self.__get_template(discover_network_with_outputs_file)
         search_impl = NetworkSearchImpl(self.mock_openstack_location)
         search_result = search_impl.discover(tosca_template)
-        self.mock_neutron_driver.get_network_by_name.assert_called_once_with('TestNetwork')
+        self.mock_neutron_driver.get_network_by_name.assert_called_once_with('TestNetwork','request1234')
         self.assertIsInstance(search_result, DiscoveryResult)
         self.assertEqual(search_result.discover_id, 'TestNetwork')
         self.assertEqual(search_result.outputs, {'network_name': 'TestNetwork'})
 
-    def test_discover_network_with_fixed_output(self):
+    @patch('osvimdriver.tosca.discover.uuid4')      
+    def test_discover_network_with_fixed_output(self,mock_uuid4):
+        mock_uuid4.return_value = 'request1234'
         self.__configure_mock_neutron_driver_with_network('TestNetwork')
         tosca_template = self.__get_template(discover_network_with_fixed_output_file)
         search_impl = NetworkSearchImpl(self.mock_openstack_location)
         search_result = search_impl.discover(tosca_template)
-        self.mock_neutron_driver.get_network_by_name.assert_called_once_with('TestNetwork')
+        self.mock_neutron_driver.get_network_by_name.assert_called_once_with('TestNetwork','request1234')
         self.assertIsInstance(search_result, DiscoveryResult)
         self.assertEqual(search_result.discover_id, 'TestNetwork')
         self.assertEqual(search_result.outputs, {'found': True})
@@ -265,6 +276,7 @@ class TestNetworkSearchImpl(unittest.TestCase):
             'ip_version': 4,
             'gateway_ip': '192.0.0.1',
             'cidr': '192.0.0.0/8',
+            'mock_uuid4' : 'request1234',
             'allocation_pools': [
                 {
                     'start': '192.0.0.2',
@@ -275,10 +287,12 @@ class TestNetworkSearchImpl(unittest.TestCase):
                     'end': '192.255.255.254'
                 }
             ]
+            
         }
         self.test_subnet_b = {
             'id': '5678',
             'name': 'subnetB',
+            'mock_uuid4' : 'request1234',
             'enable_dhcp': False,
             'ip_version': 4,
             'gateway_ip': '10.0.0.1',
@@ -296,7 +310,8 @@ class TestNetworkSearchImpl(unittest.TestCase):
         }
         self.mock_neutron_driver.get_network_by_name.return_value = self.test_network
 
-        def mock_get_subnet_by_id(subnet_id):
+        #@patch('osvimdriver.tosca.discover.uuid4')
+        def mock_get_subnet_by_id(subnet_id,mock_uuid4):
             if subnet_id == '1234':
                 return self.test_subnet_a
             elif subnet_id == '5678':
@@ -305,12 +320,14 @@ class TestNetworkSearchImpl(unittest.TestCase):
                 raise ValueError('Not a mocked subnet: {0}'.formt(subnet_id))
         self.mock_neutron_driver.get_subnet_by_id.side_effect = mock_get_subnet_by_id
 
-    def test_discover_full_attribute_support(self):
+    @patch('osvimdriver.tosca.discover.uuid4')
+    def test_discover_full_attribute_support(self,mock_uuid4):
+        mock_uuid4.return_value = 'request1234'
         self.__configure_mock_neutron_driver_with_network_and_subnets('TestNetwork')
         tosca_template = self.__get_template(discover_network_full_attributes_support_file)
         search_impl = NetworkSearchImpl(self.mock_openstack_location)
         search_result = search_impl.discover(tosca_template)
-        self.mock_neutron_driver.get_network_by_name.assert_called_once_with('TestNetwork')
+        self.mock_neutron_driver.get_network_by_name.assert_called_once_with('TestNetwork','request1234')
         self.assertIsInstance(search_result, DiscoveryResult)
         self.assertEqual(search_result.discover_id, 'TestNetwork')
         self.assertEqual(search_result.outputs, {
