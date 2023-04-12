@@ -28,7 +28,7 @@ class NeutronDriver():
             common._generate_additional_logs('', 'sent', external_request_id, '',
                                        'request', 'http', {'method' : 'get', 'uri' : LOG_URI_PREFIX +'/networks/' + network_id }, driver_request_id)
             result = neutron_client.show_network(network_id)
-            common._generate_additional_logs(result, 'received', external_request_id, 'plain/text',
+            common._generate_additional_logs(str(result), 'received', external_request_id, 'application/json',
                                        'response', 'http', {'status_code' : 200, 'status_reason_phrase' : 'ok'}, driver_request_id)  
             return result['network']
         except Exception as e:
@@ -47,7 +47,7 @@ class NeutronDriver():
                                        'request', 'http', {'method' : 'get', 'uri' : LOG_URI_PREFIX +'/networks' }, driver_request_id)
         try:
             result = neutron_client.list_networks()
-            common._generate_additional_logs(str(result), 'received', external_request_id, 'plain/text',
+            common._generate_additional_logs(str(result), 'received', external_request_id, 'application/json',
                                        'response', 'http', {'status_code' : 200, 'status_reason_phrase' : 'ok'}, driver_request_id)
         except Exception as e:
             common._generate_additional_logs(e, 'received', external_request_id, 'plain/text',
@@ -75,7 +75,7 @@ class NeutronDriver():
             common._generate_additional_logs('', 'sent', external_request_id, '',
                                        'request', 'http', {'method' : 'get', 'uri' : LOG_URI_PREFIX +'/subnets/' + subnet_id}, driver_request_id)
             result = neutron_client.show_subnet(subnet_id)
-            common._generate_additional_logs(result, 'received', external_request_id, 'plain/text',
+            common._generate_additional_logs(str(result), 'received', external_request_id, 'application/json',
                                        'response', 'http', {'status_code' : 200, 'status_reason_phrase' : 'ok'}, driver_request_id)
             return result['subnet']
         except Exception as e:

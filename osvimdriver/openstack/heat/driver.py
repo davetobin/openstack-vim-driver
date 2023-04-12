@@ -73,9 +73,11 @@ class HeatDriver():
                                         'request', 'http', {'method':'delete', 'uri' : LOG_URI_PREFIX + '/stacks/' + stack_id}, driver_request_id)
             delete_result = heat_client.stacks.delete(stack_id)
             result = ''
+            content_type =''
             if delete_result != None:   
                 result = delete_result
-            common._generate_additional_logs(result, 'received', external_request_id, '',
+                content_type = 'application/json'
+            common._generate_additional_logs(result, 'received', external_request_id, content_type,
                                        'response', 'http', {'status_code' : 204,'status_reason_phrase' : 'No Content'}, driver_request_id)
         except (heatexc.HTTPNotFound,heatexc.HTTPBadRequest) as e:
             status_reason_phrase = 'Not Found'
