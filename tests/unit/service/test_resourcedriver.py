@@ -113,6 +113,7 @@ class TestResourceDriverHandler(unittest.TestCase):
         self.adopt_config = AdoptProperties()
         self.mock_heat_input_utils = MagicMock()
         self.mock_heat_input_utils.filter_used_properties.return_value = {'propA': 'valueA'}
+        self.mock_heat_input_utils.filter_password_from_dictionary.return_value =  self.heat_template
         self.mock_heat_driver = MagicMock()
         self.mock_os_location = MagicMock(heat_driver=self.mock_heat_driver)
         self.mock_os_location.get_heat_input_util.return_value = self.mock_heat_input_utils
@@ -290,7 +291,7 @@ class TestResourceDriverHandler(unittest.TestCase):
         self.assert_internal_resource(result.associated_topology, '1')
         self.mock_heat_translator.generate_heat_template.assert_called_once_with(self.tosca_template, template_path=self.tosca_template_path)
         self.mock_location_translator.from_deployment_location.assert_called_once_with(self.deployment_location)
-        self.mock_heat_driver.create_stack.assert_called_once_with(ANY, self.mock_heat_translator.generate_heat_template.return_value, {'propA': 'valueA'})
+        self.mock_heat_driver.create_stack.assert_called_once_with(ANY, self.heat_template, {'propA': 'valueA'})
 
     def test_create_infrastructure_with_invalid_tosca_template_throws_error(self):
         self.mock_heat_translator.generate_heat_template.side_effect = ToscaValidationError('Validation error')
