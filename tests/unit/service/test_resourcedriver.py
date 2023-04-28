@@ -685,3 +685,13 @@ class TestResourceDriverHandler(unittest.TestCase):
         driver = ResourceDriverHandler(self.mock_location_translator, resource_driver_config=self.resource_driver_config, heat_translator_service=self.mock_heat_translator, tosca_discovery_service=self.mock_tosca_discover_service)
         result = driver.execute_lifecycle('Create', self.heat_driver_files, self.system_properties, self.resource_properties, {}, AssociatedTopology(), self.deployment_location)
         self.assertTrue(os.path.exists(self.heat_driver_files.root_path))
+
+    def test_create_infrastructure_filter_password(self):
+        self.mock_heat_input_utils.filter_password_from_dictionary.return_value = self.heat_template
+        self.mock_heat_driver.create_stack.return_value = '1','request1234'
+        driver = ResourceDriverHandler(self.mock_location_translator, resource_driver_config=self.resource_driver_config, heat_translator_service=self.mock_heat_translator, tosca_discovery_service=self.mock_tosca_discover_service)
+        result = driver.execute_lifecycle('Create', self.heat_driver_files, self.system_properties, self.resource_properties, {}, AssociatedTopology(), self.deployment_location)
+        self.mock_heat_input_utils.filter_password_from_dictionary.assert_called_once_with(self.heat_template)
+        self.mock_heat_driver.create_stack.assert_called_once_with(ANY, self.heat_template, {'propA': 'valueA'})    
+
+      
