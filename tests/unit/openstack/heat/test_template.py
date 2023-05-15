@@ -20,7 +20,7 @@ class TestHeatInputUtil(unittest.TestCase):
                 #cloud-config
                 password:**********
         '''
-        self.obj = HeatInputUtil()  
+        self.obj = HeatInputUtil() 
 
     def test_filter_used_properties(self):
         util = HeatInputUtil()
@@ -164,10 +164,10 @@ class TestHeatInputUtil(unittest.TestCase):
         # (and ultimately throw an error if it is)
         new_props = util.filter_used_properties(heat_yml, orig_props)
         self.assertEqual(new_props, {})
-    
+        
     def test_filter_password_from_dictionary(self):
         result = self.obj.filter_password_from_dictionary(self.template)
-        self.assertEqual(result, self.filtered_template)
+        self.assertEqual(result, self.filtered_template) 
         
     def test_filter_password_from_dictionary_without_password(self):
         tpl = '''
@@ -210,4 +210,28 @@ class TestHeatInputUtil(unittest.TestCase):
         heat_template_str = "resources:\n  apache_server:\n    properties:\n      user_data: |\n"
         expected_output = "resources:\n  apache_server:\n    properties:\n      user_data: |\n"
         actual_output = util.filter_password_from_dictionary(heat_template_str)
-        self.assertEqual(actual_output, expected_output)
+        self.assertEqual(actual_output, expected_output)  
+        
+    def test_filter_password_from_dictionary_multiple_resources(self):
+        util = HeatInputUtil()
+        test_heat_template_str = '''
+        resources:
+          test_resource:
+            type: OS::Nova::Server
+            properties:
+              name: test
+              user_data: |                           
+                password: secret123
+          test_resource_2:
+            type: apache_server
+            properties:
+              name: test2
+              user_data: |
+                password: secret456
+            '''
+        heat_template_str = test_heat_template_str
+        filtered_heat_template_str = util.filter_password_from_dictionary(heat_template_str)
+        self.assertNotIn('secret123', filtered_heat_template_str)
+        self.assertNotIn('secret456', filtered_heat_template_str)         
+    
+   

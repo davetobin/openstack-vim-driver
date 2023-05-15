@@ -29,15 +29,19 @@ class HeatInputUtil:
     def filter_password_from_dictionary(self, heat_template_str):
         heat_tpl = yaml.safe_load(heat_template_str)
         if 'resources' in heat_tpl:
-            resources = heat_tpl['resources'] 
-            user_data = resources['apache_server']['properties']['user_data']
-            regex = re.compile('{0}(.*?){1}'.format('password:', '\\n'), flags=re.DOTALL | re.IGNORECASE)
-            data_list = re.findall(regex, user_data)
-            if len(data_list) > 0:
-                for data in data_list:
-                    rep = '*' * len(data)
-                    masked_value = 'password:' + rep + '\\n'
-                    heat_template_str = re.sub(regex, masked_value, heat_template_str)
+            resources = heat_tpl['resources']
+            for res in resources.values():
+                if 'properties' in res:
+                    props = res['properties']
+                    if 'user_data' in props:
+                        user_data = props['user_data']
+                        regex = re.compile('{0}(.*?){1}'.format('password:', '\\n'), flags=re.DOTALL | re.IGNORECASE)
+                        data_list = re.findall(regex, user_data)
+                        if len(data_list) > 0:
+                            for data in data_list:
+                                rep = '*' * len(data)
+                                masked_value = 'password:' + rep + '\\n'
+                                heat_template_str = re.sub(regex, masked_value, heat_template_str)
         return heat_template_str
 
     def __filter_from_propvaluemap(self, parameters, prop_value_map):
