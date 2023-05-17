@@ -206,14 +206,12 @@ class TestHeatInputUtil(unittest.TestCase):
         self.assertEqual(result, filtered_tpl)         
         
     def test_filter_password_from_dictionary_with_empty_user_data(self):
-        util = HeatInputUtil()
         heat_template_str = "resources:\n  apache_server:\n    properties:\n      user_data: |\n"
         expected_output = "resources:\n  apache_server:\n    properties:\n      user_data: |\n"
-        actual_output = util.filter_password_from_dictionary(heat_template_str)
+        actual_output = self.obj.filter_password_from_dictionary(heat_template_str)
         self.assertEqual(actual_output, expected_output)  
         
     def test_filter_password_from_dictionary_multiple_resources(self):
-        util = HeatInputUtil()
         test_heat_template_str = '''
         resources:
           test_resource:
@@ -230,7 +228,7 @@ class TestHeatInputUtil(unittest.TestCase):
                 password: secret456
             '''
         heat_template_str = test_heat_template_str
-        filtered_heat_template_str = util.filter_password_from_dictionary(heat_template_str)
+        filtered_heat_template_str = self.obj.filter_password_from_dictionary(heat_template_str)
         self.assertNotIn('secret123', filtered_heat_template_str)
         self.assertNotIn('secret456', filtered_heat_template_str)         
     
