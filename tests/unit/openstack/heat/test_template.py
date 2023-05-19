@@ -3,25 +3,6 @@ from osvimdriver.openstack.heat.template import HeatInputUtil
 from ignition.utils.propvaluemap import PropValueMap
 
 class TestHeatInputUtil(unittest.TestCase):
-    def setUp(self):
-        self.template = '''
-        resources:
-          apache_server:
-            properties:
-              user_data: |
-                #cloud-config
-                password:mypassword
-        '''
-        self.filtered_template = '''
-        resources:
-          apache_server:
-            properties:
-              user_data: |
-                #cloud-config
-                password:**********
-        '''
-        self.obj = HeatInputUtil() 
-
     def test_filter_used_properties(self):
         util = HeatInputUtil()
         heat_yml = '''
@@ -166,10 +147,28 @@ class TestHeatInputUtil(unittest.TestCase):
         self.assertEqual(new_props, {})
         
     def test_filter_password_from_dictionary(self):
-        result = self.obj.filter_password_from_dictionary(self.template)
-        self.assertEqual(result, self.filtered_template) 
+      util = HeatInputUtil()
+      template = '''
+        resources:
+          apache_server:
+            properties:
+              user_data: |
+                #cloud-config
+                password:mypassword
+        '''
+      filtered_template = '''
+        resources:
+          apache_server:
+            properties:
+              user_data: |
+                #cloud-config
+                password:**********
+        '''
+      result = util.filter_password_from_dictionary(template)
+      self.assertEqual(result, filtered_template) 
         
     def test_filter_password_from_dictionary_without_password(self):
+        util = HeatInputUtil()
         tpl = '''
         resources:
           apache_server:
@@ -178,10 +177,11 @@ class TestHeatInputUtil(unittest.TestCase):
               #cloud-config
               some_key: some_value
         '''
-        result = self.obj.filter_password_from_dictionary(tpl)
+        result = util.filter_password_from_dictionary(tpl)
         self.assertEqual(result, tpl) 
         
     def test_filter_password_from_dictionary_with_multiple_passwords(self):
+        util = HeatInputUtil()
         tpl = '''
         resources:
           apache_server:
@@ -202,16 +202,18 @@ class TestHeatInputUtil(unittest.TestCase):
                 some_key: some_value
                 password:**********
         '''
-        result = self.obj.filter_password_from_dictionary(tpl)
+        result = util.filter_password_from_dictionary(tpl)
         self.assertEqual(result, filtered_tpl)         
         
     def test_filter_password_from_dictionary_with_empty_user_data(self):
+        util = HeatInputUtil()
         heat_template_str = "resources:\n  apache_server:\n    properties:\n      user_data: |\n"
         expected_output = "resources:\n  apache_server:\n    properties:\n      user_data: |\n"
-        actual_output = self.obj.filter_password_from_dictionary(heat_template_str)
+        actual_output = util.filter_password_from_dictionary(heat_template_str)
         self.assertEqual(actual_output, expected_output)  
         
     def test_filter_password_from_dictionary_multiple_resources(self):
+        util = HeatInputUtil()
         test_heat_template_str = '''
         resources:
           test_resource:
@@ -228,7 +230,7 @@ class TestHeatInputUtil(unittest.TestCase):
                 password: secret456
             '''
         heat_template_str = test_heat_template_str
-        filtered_heat_template_str = self.obj.filter_password_from_dictionary(heat_template_str)
+        filtered_heat_template_str = util.filter_password_from_dictionary(heat_template_str)
         self.assertNotIn('secret123', filtered_heat_template_str)
         self.assertNotIn('secret456', filtered_heat_template_str)         
     
