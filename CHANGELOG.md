@@ -1,5 +1,16 @@
 # Change Log
 
+## [3.3.0](https://github.com/IBM/openstack-vim-driver/tree/3.3.0) (2023-06-01)
+[Full Changelog](https://github.com/IBM/openstack-vim-driver/compare/3.2.1...3.3.0)
+
+**Implemented enhancements:**
+- Build issue in openstack-vim-driver with 'rc' tag [\#130](https://github.com/IBM/openstack-vim-driver/issues/130)
+- Mask password in Openstack VIM driver logs [\#128](https://github.com/IBM/openstack-vim-driver/issues/128)
+- Enable Logging for External Request & Response [\#122](https://github.com/IBM/openstack-vim-driver/issues/122)
+
+**Dependencies:**
+- Update Ignition to latest version 3.5.1 [\#126](https://github.com/IBM/openstack-vim-driver/issues/126)
+
 ## [3.2.1](https://github.com/IBM/openstack-vim-driver/tree/3.2.1) (2022-12-08)
 [Full Changelog](https://github.com/IBM/openstack-vim-driver/compare/3.2.0...3.2.1)
 
