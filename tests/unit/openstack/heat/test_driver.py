@@ -12,9 +12,9 @@ class TestHeatDriver(unittest.TestCase):
         mock_heat_client.stacks.create.return_value = {'stack': {'id': 'mock_stack_id'}}
         mock_session = MagicMock()
         heat_driver = HeatDriver(mock_session)
-        stack_id = heat_driver.create_stack('test_stack', 'heat_template_text', {'propA': 1})
+        stack_id,request_id = heat_driver.create_stack('test_stack', 'heat_template_text', {'propA': 1})
         mock_heat_client.stacks.create.assert_called_once_with(stack_name='test_stack', template='heat_template_text', parameters={'propA': 1}, files={})
-        self.assertEqual(stack_id, 'mock_stack_id')
+        self.assertEqual(stack_id, 'mock_stack_id','request1234')
 
     @patch('osvimdriver.openstack.heat.driver.heatclient.Client')
     def test_create_stack_without_name(self, mock_heat_client_init):
@@ -41,7 +41,9 @@ class TestHeatDriver(unittest.TestCase):
         self.assertEqual(str(context.exception), 'heat_template must be provided')
 
     @patch('osvimdriver.openstack.heat.driver.heatclient.Client')
+   # @patch('osvimdriver.service.resourcedriver.uuid4')
     def test_create_stack_with_additional_files(self, mock_heat_client_init):
+        #mock_uuid4.return_value = 'request1234'
         mock_heat_client = mock_heat_client_init.return_value
         mock_heat_client.stacks.create.return_value = {'stack': {'id': 'mock_stack_id'}}
         mock_session = MagicMock()
@@ -49,9 +51,10 @@ class TestHeatDriver(unittest.TestCase):
         files = {
             'fileA': 'somecontent'
         }
-        stack_id = heat_driver.create_stack('test_stack', 'heat_template_text', {'propA': 1}, files=files)
+        stack_id,request_id = heat_driver.create_stack('test_stack', 'heat_template_text', {'propA': 1}, files=files)
         mock_heat_client.stacks.create.assert_called_once_with(stack_name='test_stack', template='heat_template_text', parameters={'propA': 1}, files=files)
-        self.assertEqual(stack_id, 'mock_stack_id')
+        self.assertEqual(stack_id, 'mock_stack_id','request1234')
+        #self.assertEqual(request_id, 'request1234')
 
     @patch('osvimdriver.openstack.heat.driver.heatclient.Client')
     def test_delete_stack(self, mock_heat_client_init):

@@ -1,4 +1,4 @@
-import uuid
+from uuid import uuid4
 import logging
 import re
 import os
@@ -40,6 +40,14 @@ ADOPT_REQUEST_PREFIX = 'Adopt'
 
 STACK_RESOURCE_TYPE = 'Openstack'
 STACK_NAME = 'InfrastructureStack'
+
+def build_request_id(request_type, stack_id):
+        request_id = request_type
+        request_id += REQUEST_ID_SEPARATOR
+        request_id += stack_id
+        request_id += REQUEST_ID_SEPARATOR
+        request_id += str(uuid4())
+        return request_id
 
 class AdditionalResourceDriverProperties(ConfigurationPropertiesGroup, Service, Capability):
 
@@ -122,6 +130,7 @@ class ResourceDriverHandler(Service, ResourceDriverHandlerCapability):
     def __handle_create(self, driver_files, system_properties, resource_properties, request_properties, associated_topology, openstack_location):
         heat_driver = openstack_location.heat_driver
         stack_id = None
+        request_id =None
         if 'stack_id' in resource_properties:
             input_stack_id = resource_properties.get('stack_id')
             if input_stack_id != None and len(input_stack_id.strip())!=0 and input_stack_id.strip() != "0":
@@ -159,12 +168,12 @@ class ResourceDriverHandler(Service, ResourceDriverHandlerCapability):
             heat_input_util = openstack_location.get_heat_input_util()
             input_props = self.props_merger.merge(resource_properties, system_properties)
             heat_inputs = heat_input_util.filter_used_properties(heat_template, input_props)
+            heat_template = heat_input_util.filter_password_from_dictionary(heat_template)
             if 'resourceId' in system_properties and 'resourceName' in system_properties:
                 stack_name = self.stack_name_creator.create(system_properties['resourceId'], system_properties['resourceName'])
             else:
-                stack_name = 's' + str(uuid.uuid4())
-            stack_id = heat_driver.create_stack(stack_name, heat_template, heat_inputs, **kwargs)
-        request_id = self.__build_request_id(CREATE_REQUEST_PREFIX, stack_id)
+                stack_name = 's' + str(uuid4())       
+            stack_id,request_id = heat_driver.create_stack(stack_name, heat_template, heat_inputs, **kwargs)
         associated_topology = self.__build_associated_topology_response(stack_id)
         return LifecycleExecuteResponse(request_id, associated_topology=associated_topology)
 
@@ -183,12 +192,13 @@ class ResourceDriverHandler(Service, ResourceDriverHandlerCapability):
             raise InvalidRequestError("You must supply the stack_id in associated_topology")            
            
         stack_id = stack_resource_entry.element_id
-        heat_driver = openstack_location.heat_driver        
+        heat_driver = openstack_location.heat_driver
+        request_id = build_request_id(ADOPT_REQUEST_PREFIX, stack_id)        
 
         if stack_id != None and len(stack_id.strip())!=0 and stack_id.strip() != "0":
             try:
                 # Check for valid stack
-                stack_to_adopt = heat_driver.get_stack(stack_id.strip())
+                stack_to_adopt = heat_driver.get_stack(stack_id.strip(), request_id)
             except StackNotFoundError as e:
                 raise InfrastructureNotFoundError(str(e)) from e
         else:
@@ -199,7 +209,6 @@ class ResourceDriverHandler(Service, ResourceDriverHandlerCapability):
         if stack_status in [OS_STACK_STATUS_DELETE_COMPLETE, OS_STACK_STATUS_DELETE_IN_PROGRESS]:
             raise InvalidRequestError("The stack \'"+stack_id+"\' has been deleted")
         
-        request_id = self.__build_request_id(ADOPT_REQUEST_PREFIX, stack_id)
         associated_topology = self.__build_associated_topology_response(stack_id)
         return LifecycleExecuteResponse(request_id, associated_topology=associated_topology)
 
@@ -209,17 +218,17 @@ class ResourceDriverHandler(Service, ResourceDriverHandlerCapability):
             # There is no Stack associated to this Resource
             # This is fine, as we want the stack to be deleted. 
             # Return a response so the monitor calls get_lifecycle_execution which will return the correct async result
-            request_id = self.__build_request_id(DELETE_REQUEST_PREFIX, 'no-stack')
+            request_id = build_request_id(DELETE_REQUEST_PREFIX, 'no-stack')
         else:
             stack_id = stack_resource_entry.element_id
             heat_driver = openstack_location.heat_driver
+            request_id = build_request_id(DELETE_REQUEST_PREFIX, stack_id)
             try:
-                heat_driver.delete_stack(stack_id)
+                heat_driver.delete_stack(stack_id, request_id)
             except StackNotFoundError as e:
                 # This is fine, as we want the stack to be deleted. 
                 # Return a response so the monitor calls get_lifecycle_execution which will return the correct async result
                 pass
-            request_id = self.__build_request_id(DELETE_REQUEST_PREFIX, stack_id)
         return LifecycleExecuteResponse(request_id)
 
     def find_reference(self, instance_name, driver_files, deployment_location):
@@ -249,13 +258,6 @@ class ResourceDriverHandler(Service, ResourceDriverHandlerCapability):
             if openstack_location != None:
                 openstack_location.close()
 
-    def __build_request_id(self, request_type, stack_id):
-        request_id = request_type
-        request_id += REQUEST_ID_SEPARATOR
-        request_id += stack_id
-        request_id += REQUEST_ID_SEPARATOR
-        request_id += str(uuid.uuid4())
-        return request_id 
 
     def __split_request_id(self, request_id):
         split_parts = request_id.split(REQUEST_ID_SEPARATOR)
@@ -328,7 +330,7 @@ class ResourceDriverHandler(Service, ResourceDriverHandlerCapability):
         heat_driver = openstack_location.heat_driver
         request_type, stack_id, operation_id = self.__split_request_id(request_id)
         try:
-            stack = heat_driver.get_stack(stack_id)            
+            stack = heat_driver.get_stack(stack_id, request_id)            
         except StackNotFoundError as e:
             logger.debug('Stack not found: %s', stack_id)
             if request_type == DELETE_REQUEST_PREFIX:
@@ -411,3 +413,5 @@ class ResourceDriverHandler(Service, ResourceDriverHandlerCapability):
             value = stack_output.get('output_value')
             outputs[key] = value
         return outputs
+
+    
