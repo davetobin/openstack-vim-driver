@@ -3,6 +3,7 @@ import uuid
 from heatclient import client as heatclient
 from heatclient import exc as heatexc
 from ignition.service.logging import logging_context
+from osvimdriver.openstack.heat.template import HeatInputUtil
 import osvimdriver.service.common as common
 
 import osvimdriver.service.resourcedriver as rd
@@ -37,8 +38,9 @@ class HeatDriver():
         logger.debug('Creating stack with name %s', stack_name)
 
         external_request_id = str(uuid.uuid4())
-
-        reqbody_dict = {"stack_name" : stack_name, "template" : heat_template, "parameters" : input_properties, "files" : files}
+        
+        heat_template_log = HeatInputUtil.filter_password_from_dictionary(self,heat_template)
+        reqbody_dict = {"stack_name" : stack_name, "template" : heat_template_log, "parameters" : input_properties, "files" : files}
         common._generate_additional_logs(reqbody_dict, 'sent', external_request_id, 'application/json',
                                        'request', 'http', {'method' : 'post', 'uri' : LOG_URI_PREFIX +'/stacks'}, None)
         
