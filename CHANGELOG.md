@@ -1,9 +1,10 @@
 # Change Log
 
-## [3.3.0](https://github.com/IBM/openstack-vim-driver/tree/3.3.0) (2023-06-01)
+## [3.3.0](https://github.com/IBM/openstack-vim-driver/tree/3.3.0) (2023-06-06)
 [Full Changelog](https://github.com/IBM/openstack-vim-driver/compare/3.2.1...3.3.0)
 
 **Implemented enhancements:**
+- Assembly Instance creation failed in openstack vim driver with 3.3.0-rc1 pre-release image [\#134](https://github.com/IBM/openstack-vim-driver/issues/134)
 - Build issue in openstack-vim-driver with 'rc' tag [\#130](https://github.com/IBM/openstack-vim-driver/issues/130)
 - Mask password in Openstack VIM driver logs [\#128](https://github.com/IBM/openstack-vim-driver/issues/128)
 - Enable Logging for External Request & Response [\#122](https://github.com/IBM/openstack-vim-driver/issues/122)
