@@ -168,7 +168,6 @@ class ResourceDriverHandler(Service, ResourceDriverHandlerCapability):
             heat_input_util = openstack_location.get_heat_input_util()
             input_props = self.props_merger.merge(resource_properties, system_properties)
             heat_inputs = heat_input_util.filter_used_properties(heat_template, input_props)
-            heat_template = heat_input_util.filter_password_from_dictionary(heat_template)
             if 'resourceId' in system_properties and 'resourceName' in system_properties:
                 stack_name = self.stack_name_creator.create(system_properties['resourceId'], system_properties['resourceName'])
             else:
