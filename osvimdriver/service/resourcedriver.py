@@ -60,7 +60,7 @@ class AdoptProperties(ConfigurationPropertiesGroup, Service, Capability):
     def __init__(self):
         super().__init__('adopt')
         self.skip_status_check = False
-        self.adoptable_status_values = ['CREATE_COMPLETE','ADOPT_COMPLETE','RESUME_COMPLETE','CHECK_COMPLETE','UPDATE_COMPLETE']
+        self.adoptable_status_values = ['CREATE_COMPLETE','ADOPT_COMPLETE','RESUME_COMPLETE','CHECK_COMPLETE','UPDATE_COMPLETE','SNAPSHOT_COMPLETE']
         
 class StackNameCreator:
 

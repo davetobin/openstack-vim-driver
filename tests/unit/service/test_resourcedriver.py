@@ -475,21 +475,8 @@ class TestResourceDriverHandler(unittest.TestCase):
         execution = driver.get_lifecycle_execution('Adopt::1::request123', self.deployment_location)
         self.assertIsInstance(execution, LifecycleExecution)
         self.assertEqual(execution.request_id, 'Adopt::1::request123')
-        self.assertEqual(execution.status, 'COMPLETE')
-
-    def test_get_lifecycle_execution_adopt_indeterminate_status(self):
-        # here we generate a stack status of snapshot_complete, but will not import, becuase it is not a listed status we deal with.
-        self.mock_heat_driver.get_stack.return_value = {
-            'id': '1',
-            'stack_status': 'SNAPSHOT_COMPLETE',
-            'stack_status_reason': 'SNAPSHOT_COMPLETE'
-        }
-        adopt_conf=self.adopt_config        
-        driver = ResourceDriverHandler(self.mock_location_translator, resource_driver_config=self.resource_driver_config, heat_translator_service=self.mock_heat_translator, tosca_discovery_service=self.mock_tosca_discover_service, adopt_config=adopt_conf)
-        with self.assertRaises(ResourceDriverError) as context:
-            driver.get_lifecycle_execution('Adopt::1::request123', self.deployment_location)
-        self.assertEqual(str(context.exception), 'Cannot determine status for request \'Adopt::1::request123\' as the current Stack status is \'SNAPSHOT_COMPLETE\' which is not a valid value for the expected transition')
-
+        self.assertEqual(execution.status, 'COMPLETE')      
+  
     def test_get_lifecycle_execution_adopt_additionally_configured_status(self):
         # here we generate a stack status of snapshot_complete, but will still import, becuase we'll add it to the list, as if configured
         self.mock_heat_driver.get_stack.return_value = {
