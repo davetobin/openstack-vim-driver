@@ -35,14 +35,15 @@ class HeatInputUtil:
                     props = res['properties']
                     if 'user_data' in props:
                         user_data = props['user_data']
-                        regex = re.compile('{0}(.*?){1}'.format('password:', '\\n'), flags=re.DOTALL | re.IGNORECASE)
-                        data_list = re.findall(regex, user_data)
-                        if len(data_list) > 0:
-                            for data in data_list:
-                                rep = '*' * len(data)
-                                masked_value = 'password:' + rep + '\\n'
-                                heat_template_str = re.sub(regex, masked_value, heat_template_str)
-        return heat_template_str
+                        if isinstance(user_data, str):
+                            regex = re.compile('{0}(.*?){1}'.format('password:', '\\n'), flags=re.DOTALL | re.IGNORECASE)
+                            data_list = re.findall(regex, user_data)
+                            if len(data_list) > 0:
+                                for data in data_list:
+                                    rep = '*' * len(data)
+                                    masked_value = 'password:' + rep + '\\n'
+                                    heat_template_str = re.sub(regex, masked_value, heat_template_str)
+            return heat_template_str
 
     def __filter_from_propvaluemap(self, parameters, prop_value_map):
         used_properties = {}
