@@ -211,7 +211,7 @@ class TestHeatInputUtil(unittest.TestCase):
         expected_output = "resources:\n  apache_server:\n    properties:\n      user_data: |\n"
         actual_output = util.filter_password_from_dictionary(heat_template_str)
         self.assertEqual(actual_output, expected_output)  
-        
+               
     def test_filter_password_from_dictionary_multiple_resources(self):
         util = HeatInputUtil()
         test_heat_template_str = '''
@@ -232,6 +232,21 @@ class TestHeatInputUtil(unittest.TestCase):
         heat_template_str = test_heat_template_str
         filtered_heat_template_str = util.filter_password_from_dictionary(heat_template_str)
         self.assertNotIn('secret123', filtered_heat_template_str)
-        self.assertNotIn('secret456', filtered_heat_template_str)         
-    
+        self.assertNotIn('secret456', filtered_heat_template_str)             
+          
+    def test_user_data_not_string(self):
+        util = HeatInputUtil()
+        heat_template_str = '{"resources": {"resource1": {"properties": {"user_data": 123"}}}}'
+        expected_result = '{"resources": {"resource1": {"properties": {"user_data": 123"}}}}'
+        result = util.filter_password_from_dictionary(heat_template_str)
+        self.assertEqual(result, expected_result)
+        
+    def test_user_data_get_file(self):
+        util = HeatInputUtil()
+        heat_template_str = '{"resources": {"resource1": {"properties": {"user_data": {"get_file": "http://url/dir/files.yaml"}}}}}'
+        expected_result = '{"resources": {"resource1": {"properties": {"user_data": {"get_file": "http://url/dir/files.yaml"}}}}}'
+        result = util.filter_password_from_dictionary(heat_template_str)
+        self.assertEqual(result, expected_result)   
+
+      
    
