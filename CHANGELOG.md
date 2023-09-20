@@ -1,5 +1,16 @@
 # Change Log
 
+## [3.4.0](https://github.com/IBM/openstack-vim-driver/tree/3.4.0) (2023-09-20)
+[Full Changelog](https://github.com/IBM/openstack-vim-driver/compare/3.3.0...3.4.0)
+
+**Implemented enhancements:**
+- os-vim-driver Stack status 'SNAPSHOT_COMPLETE' is not an adoptable state [\#114](https://github.com/IBM/openstack-vim-driver/issues/114)
+- Fix for Bug #128 does not validate for str only data for masking  [\#142](https://github.com/IBM/openstack-vim-driver/issues/142)
+
+**Dependencies:**
+- Update Ignition with latest version 3.5.2 [\#144](https://github.com/IBM/openstack-vim-driver/issues/144)
+
+
 ## [3.3.0](https://github.com/IBM/openstack-vim-driver/tree/3.3.0) (2023-06-06)
 [Full Changelog](https://github.com/IBM/openstack-vim-driver/compare/3.2.1...3.3.0)
 
