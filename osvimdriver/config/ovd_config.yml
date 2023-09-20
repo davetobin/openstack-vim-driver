@@ -14,5 +14,5 @@ resource_driver:
 
 adopt:
   skip_status_check: False
-  adoptable_status_values: ['CREATE_COMPLETE','ADOPT_COMPLETE','RESUME_COMPLETE','CHECK_COMPLETE','UPDATE_COMPLETE']
+  adoptable_status_values: ['CREATE_COMPLETE','ADOPT_COMPLETE','RESUME_COMPLETE','CHECK_COMPLETE','UPDATE_COMPLETE','SNAPSHOT_COMPLETE']
    

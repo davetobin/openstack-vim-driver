@@ -71,7 +71,7 @@ app:
         # List of openstack stack status considered OK to adopt: 
         # Potential Values: 
         # CREATE_COMPLETE,ADOPT_COMPLETE,RESUME_COMPLETE,CHECK_COMPLETE,UPDATE_COMPLETE,SNAPSHOT_COMPLETE,INIT_COMPLETE,ROLLBACK_COMPLETE
-        adoptable_status_values: ['CREATE_COMPLETE','ADOPT_COMPLETE','RESUME_COMPLETE','CHECK_COMPLETE','UPDATE_COMPLETE']  
+        adoptable_status_values: ['CREATE_COMPLETE','ADOPT_COMPLETE','RESUME_COMPLETE','CHECK_COMPLETE','UPDATE_COMPLETE','SNAPSHOT_COMPLETE']  
 
     security:
       ssl:
